@@ -29,11 +29,12 @@ public class WebSecurityConfig {
     private IUserService userService;
 
     @Autowired
-    private PasswordEncoderConfig passwordEncoderConfig;
+    private BCryptPasswordEncoder passwordEncoderConfig;
 
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        //spring security 5
         http.csrf().disable();
         http.authorizeHttpRequests((authz) ->
                         authz.requestMatchers("/thanh-toan", "/gio-hang").hasAnyRole("USER", "ADMIN")
@@ -48,10 +49,49 @@ public class WebSecurityConfig {
                     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
                         CustomOAuth2User oauthUser = (CustomOAuth2User) authentication.getPrincipal();
                         //kiểm tra xem database đã có tài khoản gg này chưa, nếu chưa thì lưu vào db
-                        userService.processOAuthPostLogin(oauthUser.getAttribute("email"));
+                        userService.processOAuthPostLogin(oauthUser.getAttribute("email"), oauthUser.getName(), oauthUser.getClientName());
                         response.sendRedirect("/");
                     }
                 });
+
+        //cập nhật với spring security 6
+//        http.csrf(csrf -> csrf.disable());
+//        http.authorizeHttpRequests((authz) ->
+//                        authz.requestMatchers("/thanh-toan", "/gio-hang").authenticated()
+//                                .requestMatchers("/admin-page/**").hasRole("ADMIN").anyRequest().permitAll())
+//                //login and logout
+//                .formLogin((formLogin) ->
+//                        formLogin
+//                                .usernameParameter("email")
+//                                .passwordParameter("password")
+//                                .loginPage("/dang-nhap")
+//                                .failureUrl("/dang-nhap?error=true")
+//                                .defaultSuccessUrl("/")
+//                                .loginProcessingUrl("/login")
+//                )
+//                .logout((logout) ->
+//                        logout
+//                                .logoutUrl("/logout")
+//                                .logoutSuccessUrl("/"))
+//                //login with gg
+//                .oauth2Login(oauth ->
+//                        oauth
+//                                .loginPage("/dang-nhap")
+//                                .userInfoEndpoint(userInfoEndpointConfig ->
+//                                        userInfoEndpointConfig.userService(oAuth2UserService))
+//                                .successHandler(new AuthenticationSuccessHandler() {
+//                                    //thêm hàm xử lí khi login thành công
+//                                    @Override
+//                                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+//                                        CustomOAuth2User oauthUser = (CustomOAuth2User) authentication.getPrincipal();
+//                                        //provider can be Google or Facebook
+//                                        String provider = oauthUser.getClientName();
+//                                        //kiểm tra xem database đã có tài khoản gg này chưa, nếu chưa thì lưu vào db
+//                                        userService.processOAuthPostLogin(oauthUser.getAttribute("email"), oauthUser.getName(), provider);
+//                                        response.sendRedirect("/");
+//                                    }
+//                                }));
+
         http.authenticationProvider(authProvider());
         return http.build();
     }
@@ -61,7 +101,7 @@ public class WebSecurityConfig {
     public DaoAuthenticationProvider authProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoderConfig.encoder());
+        authProvider.setPasswordEncoder(passwordEncoderConfig);
         return authProvider;
     }
 }

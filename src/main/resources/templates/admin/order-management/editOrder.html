@@ -58,19 +58,6 @@
     </div>
 </div>
 <th:block th:insert="~{admin/fragment::body/script}"></th:block>
-<script type="text/javascript">
-    var loadImg = function (event) {
-        var images = $("#images").val();
-        for (let i = 0; i < images.length; i++) {
-            var img = document.createElement("img");
-            img.style.width = '250px';
-            img.src = URL.createObjectURL(event.target.files[i]);
-            var imglist = document.getElementById("img-list");
-            imglist.append(img);
-        }
-    };
 
-    $("#yearPublic").val($("#yearPublic").val());
-</script>
 </body>
 </html>
